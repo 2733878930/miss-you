@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我想你了</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .message-box {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 10;
+            animation: fadeIn 1s ease;
+        }
+        
+        .message-box h1 {
+            color: #ff6b6b;
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        .btn:hover {
+            background: #ff5252;
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(255, 107, 107, 0.6);
+        }
+        
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .popup.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .popup-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 80%;
+            text-align: center;
+            transform: scale(0.7);
+            transition: transform 0.3s ease;
+        }
+        
+        .popup.active .popup-content {
+            transform: scale(1);
+        }
+        
+        .popup-content h2 {
+            color: #ff6b6b;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .popup-content p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .love-messages {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50;
+        }
+        
+        .love-message {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            max-width: 70%;
+            animation: floatUp 5s linear forwards;
+            font-size: 16px;
+            color: #ff6b6b;
+            border: 1px solid #ffcccc;
+        }
+        
+        .heart {
+            position: absolute;
+            font-size: 24px;
+            color: #ff6b6b;
+            animation: floatUp 5s linear forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(10deg);
+                opacity: 0;
+            }
+        }
+        
+        .flowers {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .flower {
+            position: absolute;
+            font-size: 20px;
+            opacity: 0.7;
+            animation: float 15s linear infinite;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="flowers" id="flowers"></div>
+    
+    <div class="container">
+        <div class="message-box" id="messageBox">
+            <h1>我想你了 💕</h1>
+            <button class="btn" id="responseBtn">我也想你了</button>
+        </div>
+    </div>
+    
+    <div class="popup" id="initialPopup">
+        <div class="popup-content">
+            <h2>亲爱的</h2>
+            <p>每次想到你，我的心里都充满了温暖和幸福。</p>
+            <p>你是我生命中最美好的礼物。</p>
+            <button class="btn" id="closePopup">继续</button>
+        </div>
+    </div>
+    
+    <div class="love-messages" id="loveMessages"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const responseBtn = document.getElementById('responseBtn');
+            const initialPopup = document.getElementById('initialPopup');
+            const closePopup = document.getElementById('closePopup');
+            const loveMessages = document.getElementById('loveMessages');
+            const flowers = document.getElementById('flowers');
+            
+            // 创建花朵背景
+            for (let i = 0; i < 15; i++) {
+                const flower = document.createElement('div');
+                flower.classList.add('flower');
+                flower.innerHTML = '🌸';
+                flower.style.left = Math.random() * 100 + 'vw';
+                flower.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                flower.style.animationDelay = Math.random() * 5 + 's';
+                flowers.appendChild(flower);
+            }
+            
+            // 显示初始弹窗
+            setTimeout(() => {
+                initialPopup.classList.add('active');
+            }, 1000);
+            
+            // 关闭初始弹窗
+            closePopup.addEventListener('click', () => {
+                initialPopup.classList.remove('active');
+            });
+            
+            // 响应按钮点击事件
+            responseBtn.addEventListener('click', () => {
+                // 显示满屏关心消息
+                loveMessages.style.display = 'block';
+                
+                // 创建多条关心消息
+                const messages = [
+                    "今天过得怎么样？",
+                    "记得按时吃饭哦",
+                    "你是我最珍贵的宝贝",
+                    "想和你一起看星星",
+                    "你的笑容是我最大的幸福",
+                    "无论何时，我都在这里",
+                    "你让我的世界变得完整",
+                    "想紧紧拥抱你",
+                    "你是我每天醒来的动力",
+                    "爱你胜过千言万语",
+                    "你是我生命中最美的风景",
+                    "想和你一起慢慢变老",
+                    "你的快乐就是我的快乐",
+                    "你是我心中的唯一",
+                    "想你了，每一分每一秒"
+                ];
+                
+                // 创建心形
+                const hearts = ['💖', '💗', '💓', '💞', '💕'];
+                
+                // 持续显示消息和心形
+                let messageInterval = setInterval(() => {
+                    // 随机显示消息或心形
+                    if (Math.random() > 0.5) {
+                        // 显示消息
+                        const message = document.createElement('div');
+                        message.classList.add('love-message');
+                        message.textContent = messages[Math.floor(Math.random() * messages.length)];
+                        message.style.left = Math.random() * 70 + 'vw';
+                        message.style.top = '100vh';
+                        loveMessages.appendChild(message);
+                        
+                        // 5秒后移除消息
+                        setTimeout(() => {
+                            message.remove();
+                        }, 5000);
+                    } else {
+                        // 显示心形
+                        const heart = document.createElement('div');
+                        heart.classList.add('heart');
+                        heart.innerHTML = hearts[Math.floor(Math.random() * hearts.length)];
+                        heart.style.left = Math.random() * 85 + 'vw';
+                        heart.style.top = '100vh';
+                        heart.style.fontSize = (Math.random() * 20 + 20) + 'px';
+                        loveMessages.appendChild(heart);
+                        
+                        // 5秒后移除心形
+                        setTimeout(() => {
+                            heart.remove();
+                        }, 5000);
+                    }
+                }, 800);
+                
+                // 10秒后停止创建新消息
+                setTimeout(() => {
+                    clearInterval(messageInterval);
+                }, 10000);
+            });
+        });
+    </script>
+</body>
+</html>
